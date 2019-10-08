@@ -71,7 +71,6 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -351,71 +350,144 @@ public class CameraConnectionFragment extends Fragment {
 
   /** Creates a new {@link CameraCaptureSession} for camera preview. */
   private void createCameraPreviewSession() {
-    try {
-      final SurfaceTexture texture = textureView.getSurfaceTexture();
-      assert texture != null;
 
-      // We configure the size of default buffer to be the size of camera preview we want.
-      texture.setDefaultBufferSize(previewSize.getWidth(), previewSize.getHeight());
 
-      // This is the output Surface we need to start preview.
-      final Surface surface = new Surface(texture);
+        seasonDetection();
 
-      // We set up a CaptureRequest.Builder with the output Surface.
-      previewRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-      previewRequestBuilder.addTarget(surface);
 
-      LOGGER.i("Opening camera preview: " + previewSize.getWidth() + "x" + previewSize.getHeight());
-
-      // Create the reader for the preview frames.
-      previewReader =
-              ImageReader.newInstance(previewSize.getWidth(), previewSize.getHeight(), ImageFormat.YUV_420_888, 2);
-
-      previewReader.setOnImageAvailableListener(imageListener, backgroundHandler);
-      previewRequestBuilder.addTarget(previewReader.getSurface());
-
-      // Here, we create a CameraCaptureSession for camera preview.
-      cameraDevice.createCaptureSession(
-          Arrays.asList(surface, previewReader.getSurface()),
-          new CameraCaptureSession.StateCallback() {
-
-            @Override
-            public void onConfigured(final CameraCaptureSession cameraCaptureSession) {
-              // The camera is already closed
-              if (null == cameraDevice) {
-                return;
-              }
-
-              // When the session is ready, we start displaying the preview.
-              captureSession = cameraCaptureSession;
-              try {
-                // Auto focus should be continuous for camera preview.
-                previewRequestBuilder.set(
-                    CaptureRequest.CONTROL_AF_MODE,
-                    CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
-                // Flash is automatically enabled when necessary.
-                previewRequestBuilder.set(
-                    CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
-
-                // Finally, we start displaying the camera preview.
-                previewRequest = previewRequestBuilder.build();
-                captureSession.setRepeatingRequest(
-                    previewRequest, mCaptureCallback, backgroundHandler);
-              } catch (final CameraAccessException e) {
-                LOGGER.e(e, "Exception!");
-              }
-            }
-
-            @Override
-            public void onConfigureFailed(final CameraCaptureSession cameraCaptureSession) {
-              showToast("Failed");
-            }
-          },
-          null);
-    } catch (final CameraAccessException e) {
-      LOGGER.e(e, "Exception!");
-    }
   }
+
+    public void seasonDetection(){
+
+        final SurfaceTexture texture = textureView.getSurfaceTexture();
+        assert texture != null;
+
+        // We configure the size of default buffer to be the size of camera preview we want.
+        texture.setDefaultBufferSize(previewSize.getWidth(), previewSize.getHeight());
+
+        // This is the output Surface we need to start preview.
+        final Surface surface = new Surface(texture);
+
+        // We set up a CaptureRequest.Builder with the output Surface.
+        try {
+            previewRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+        previewRequestBuilder.addTarget(surface);
+
+        LOGGER.i("Opening camera preview: " + previewSize.getWidth() + "x" + previewSize.getHeight());
+
+
+        // Create the reader for the preview frames.
+        previewReader =
+                ImageReader.newInstance(previewSize.getWidth(), previewSize.getHeight(), ImageFormat.YUV_420_888, 2);
+
+        previewReader.setOnImageAvailableListener(imageListener, backgroundHandler);
+        previewRequestBuilder.addTarget(previewReader.getSurface());
+
+        // Here, we create a CameraCaptureSession for camera preview.
+        try {
+            cameraDevice.createCaptureSession(
+                    Arrays.asList(surface, previewReader.getSurface()),
+                    new CameraCaptureSession.StateCallback() {
+
+                        @Override
+                        public void onConfigured(final CameraCaptureSession cameraCaptureSession) {
+                            // The camera is already closed
+                            if (null == cameraDevice) {
+                                return;
+                            }
+
+                            // When the session is ready, we start displaying the preview.
+                            captureSession = cameraCaptureSession;
+                            try {
+                                // Auto focus should be continuous for camera preview.
+                                previewRequestBuilder.set(
+                                        CaptureRequest.CONTROL_AF_MODE,
+                                        CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+                                // Flash is automatically enabled when necessary.
+                                previewRequestBuilder.set(
+                                        CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
+
+                                // Finally, we start displaying the camera preview.
+                                previewRequest = previewRequestBuilder.build();
+                                captureSession.setRepeatingRequest(
+                                        previewRequest, mCaptureCallback, backgroundHandler);
+                            } catch (final CameraAccessException e) {
+                                LOGGER.e(e, "Exception!");
+                            }
+                        }
+
+                        @Override
+                        public void onConfigureFailed(final CameraCaptureSession cameraCaptureSession) {
+                            showToast("Failed");
+                        }
+                    },
+                    null);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public void seasonCapture(){
+        try {
+            SurfaceTexture texture = textureView.getSurfaceTexture();
+            // We configure the size of default buffer to be the size of camera preview we want.
+            texture.setDefaultBufferSize(previewSize.getWidth(), previewSize.getHeight());
+
+            // This is the output Surface we need to start preview.
+            Surface surface = new Surface(texture);
+
+            // We set up a CaptureRequest.Builder with the output Surface.
+            previewRequestBuilder
+                    = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+            previewRequestBuilder.addTarget(surface);
+
+            jpegImageReader.get().setOnImageAvailableListener(
+                    imageListener, backgroundHandler);
+
+
+
+            // Here, we create a CameraCaptureSession for camera preview.
+            cameraDevice.createCaptureSession(Arrays.asList(surface,
+                    jpegImageReader.get().getSurface()
+                    ), new CameraCaptureSession.StateCallback() {
+                        @Override
+                        public void onConfigured(CameraCaptureSession cameraCaptureSession) {
+                            synchronized (mCameraStateLock) {
+                                // The camera is already closed
+                                if (null == cameraDevice) {
+                                    return;
+                                }
+
+                                try {
+                                    setup3AControlsLocked(previewRequestBuilder);
+                                    // Finally, we start displaying the camera preview.
+                                    cameraCaptureSession.setRepeatingRequest(
+                                            previewRequestBuilder.build(),
+                                            mPreCaptureCallback, backgroundHandler);
+                                    mState = STATE_PREVIEW;
+                                } catch (CameraAccessException | IllegalStateException e) {
+                                    e.printStackTrace();
+                                    return;
+                                }
+                                // When the session is ready, we start displaying the preview.
+                                captureSession = cameraCaptureSession;
+                            }
+                        }
+
+                        @Override
+                        public void onConfigureFailed(CameraCaptureSession cameraCaptureSession) {
+
+                        }
+                    }, backgroundHandler
+            );
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
 
 
   private void configureTransform(final int viewWidth, final int viewHeight) {
@@ -837,7 +909,7 @@ public class CameraConnectionFragment extends Fragment {
                                        @NonNull CaptureRequest request,
                                        @NonNull TotalCaptureResult result) {
           showToast("Saved: " + mFile);
-          Log.d(TAG, mFile.toString());
+
           unlockFocus();
         }
       };
@@ -1065,7 +1137,7 @@ public class CameraConnectionFragment extends Fragment {
 
         // Start the preview session if the TextureView has been set up already.
         if (previewSize != null && textureView.isAvailable()) {
-          createCameraPreviewSessionLocked();
+          createCameraPreviewSession();
         }
       }
     }
@@ -1442,69 +1514,6 @@ public class CameraConnectionFragment extends Fragment {
 
 
 
-
-  /**
-   * Creates a new {@link CameraCaptureSession} for camera preview.
-   * <p/>
-   * Call this only with {@link #mCameraStateLock} held.
-   */
-  private void createCameraPreviewSessionLocked() {
-    try {
-      SurfaceTexture texture = textureView.getSurfaceTexture();
-      // We configure the size of default buffer to be the size of camera preview we want.
-      texture.setDefaultBufferSize(previewSize.getWidth(), previewSize.getHeight());
-
-      // This is the output Surface we need to start preview.
-      Surface surface = new Surface(texture);
-
-      // We set up a CaptureRequest.Builder with the output Surface.
-      previewRequestBuilder
-              = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-      previewRequestBuilder.addTarget(surface);
-
-      jpegImageReader.get().setOnImageAvailableListener(
-              imageListener, backgroundHandler);
-
-
-
-      // Here, we create a CameraCaptureSession for camera preview.
-      cameraDevice.createCaptureSession(Arrays.asList(surface,
-              jpegImageReader.get().getSurface()
-              ), new CameraCaptureSession.StateCallback() {
-                @Override
-                public void onConfigured(CameraCaptureSession cameraCaptureSession) {
-                  synchronized (mCameraStateLock) {
-                    // The camera is already closed
-                    if (null == cameraDevice) {
-                      return;
-                    }
-
-                    try {
-                      setup3AControlsLocked(previewRequestBuilder);
-                      // Finally, we start displaying the camera preview.
-                      cameraCaptureSession.setRepeatingRequest(
-                              previewRequestBuilder.build(),
-                              mPreCaptureCallback, backgroundHandler);
-                      mState = STATE_PREVIEW;
-                    } catch (CameraAccessException | IllegalStateException e) {
-                      e.printStackTrace();
-                      return;
-                    }
-                    // When the session is ready, we start displaying the preview.
-                    captureSession = cameraCaptureSession;
-                  }
-                }
-
-                @Override
-                public void onConfigureFailed(CameraCaptureSession cameraCaptureSession) {
-
-                }
-              }, backgroundHandler
-      );
-    } catch (CameraAccessException e) {
-      e.printStackTrace();
-    }
-  }
 
   /**
    * Configure the given {@link CaptureRequest.Builder} to use auto-focus, auto-exposure, and
