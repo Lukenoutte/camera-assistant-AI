@@ -30,8 +30,10 @@ import android.content.res.Configuration;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
+import android.graphics.YuvImage;
 import android.hardware.SensorManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -43,6 +45,7 @@ import android.hardware.camera2.CaptureFailure;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
+import android.hardware.camera2.params.InputConfiguration;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
@@ -50,6 +53,7 @@ import android.media.ImageReader.OnImageAvailableListener;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -70,8 +74,10 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -154,6 +160,7 @@ public class CameraConnectionFragment extends Fragment {
   /** {@link CameraDevice.StateCallback} is called when {@link CameraDevice} changes its state. */
   private final CameraDevice.StateCallback stateCallback =
       new CameraDevice.StateCallback() {
+        @RequiresApi(api = Build.VERSION_CODES.M)
         @Override
         public void onOpened(final CameraDevice cd) {
           // This method is called when the camera is opened.  We start camera preview here.
@@ -283,16 +290,6 @@ public class CameraConnectionFragment extends Fragment {
 
   }
 
-  public void createImageFolder()throws  IOException{
-    File storageDir = getActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES);
-    String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-    String prepend = "JPEG_" + timeStamp + ".jpg";
-    mFile = new File(storageDir, prepend);
-    if(!storageDir.exists()){
-      storageDir.mkdirs();
-    }
-
-  }
 
 
 
@@ -349,10 +346,11 @@ public class CameraConnectionFragment extends Fragment {
   }
 
   /** Creates a new {@link CameraCaptureSession} for camera preview. */
+  @RequiresApi(api = Build.VERSION_CODES.M)
   private void createCameraPreviewSession() {
 
 
-        seasonDetection();
+      seasonCapture();
 
 
   }
@@ -388,6 +386,7 @@ public class CameraConnectionFragment extends Fragment {
 
         // Here, we create a CameraCaptureSession for camera preview.
         try {
+
             cameraDevice.createCaptureSession(
                     Arrays.asList(surface, previewReader.getSurface()),
                     new CameraCaptureSession.StateCallback() {
@@ -413,7 +412,7 @@ public class CameraConnectionFragment extends Fragment {
                                 // Finally, we start displaying the camera preview.
                                 previewRequest = previewRequestBuilder.build();
                                 captureSession.setRepeatingRequest(
-                                        previewRequest, mCaptureCallback, backgroundHandler);
+                                        previewRequest, mPreCaptureCallback, backgroundHandler);
                             } catch (final CameraAccessException e) {
                                 LOGGER.e(e, "Exception!");
                             }
@@ -424,13 +423,14 @@ public class CameraConnectionFragment extends Fragment {
                             showToast("Failed");
                         }
                     },
-                    null);
+                    backgroundHandler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
     }
 
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     public void seasonCapture(){
         try {
             SurfaceTexture texture = textureView.getSurfaceTexture();
@@ -450,40 +450,42 @@ public class CameraConnectionFragment extends Fragment {
 
 
 
+
             // Here, we create a CameraCaptureSession for camera preview.
-            cameraDevice.createCaptureSession(Arrays.asList(surface,
-                    jpegImageReader.get().getSurface()
-                    ), new CameraCaptureSession.StateCallback() {
-                        @Override
-                        public void onConfigured(CameraCaptureSession cameraCaptureSession) {
-                            synchronized (mCameraStateLock) {
-                                // The camera is already closed
-                                if (null == cameraDevice) {
-                                    return;
-                                }
 
-                                try {
-                                    setup3AControlsLocked(previewRequestBuilder);
-                                    // Finally, we start displaying the camera preview.
-                                    cameraCaptureSession.setRepeatingRequest(
-                                            previewRequestBuilder.build(),
-                                            mPreCaptureCallback, backgroundHandler);
-                                    mState = STATE_PREVIEW;
-                                } catch (CameraAccessException | IllegalStateException e) {
-                                    e.printStackTrace();
-                                    return;
-                                }
-                                // When the session is ready, we start displaying the preview.
-                                captureSession = cameraCaptureSession;
-                            }
+
+
+            cameraDevice.createCaptureSession( Arrays.asList(surface, jpegImageReader.get().getSurface()), new CameraCaptureSession.StateCallback() {
+                @Override
+                public void onConfigured(CameraCaptureSession cameraCaptureSession) {
+                    synchronized (mCameraStateLock) {
+                        // The camera is already closed
+                        if (null == cameraDevice) {
+                            return;
                         }
 
-                        @Override
-                        public void onConfigureFailed(CameraCaptureSession cameraCaptureSession) {
-
+                        try {
+                            setup3AControlsLocked(previewRequestBuilder);
+                            // Finally, we start displaying the camera preview.
+                            cameraCaptureSession.setRepeatingRequest(
+                                    previewRequestBuilder.build(),
+                                    mPreCaptureCallback, backgroundHandler);
+                            mState = STATE_PREVIEW;
+                        } catch (CameraAccessException | IllegalStateException e) {
+                            e.printStackTrace();
+                            return;
                         }
-                    }, backgroundHandler
-            );
+                        // When the session is ready, we start displaying the preview.
+                        captureSession = cameraCaptureSession;
+                    }
+                }
+
+                @Override
+                public void onConfigureFailed(CameraCaptureSession cameraCaptureSession) {
+
+                }
+            } , backgroundHandler);
+
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
@@ -576,7 +578,7 @@ public class CameraConnectionFragment extends Fragment {
   // aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
 
-  private static final int REQUEST_CAMERA_PERMISSION = 1;
+
 
 
   static {
@@ -636,74 +638,6 @@ public class CameraConnectionFragment extends Fragment {
 
 
 
-  /**
-   * A {@link CameraCaptureSession.CaptureCallback} that handles events related to JPEG capture.
-   */
-  private CameraCaptureSession.CaptureCallback mCaptureCallback
-          = new CameraCaptureSession.CaptureCallback() {
-
-    private void process(CaptureResult result) {
-      switch (mState) {
-        case STATE_PREVIEW: {
-          // We have nothing to do when the camera preview is working normally.
-          break;
-        }
-        case STATE_WAITING_LOCK: {
-          Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
-          if (afState == null) {
-            captureStillPicture();
-          } else if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState ||
-                  CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
-            // CONTROL_AE_STATE can be null on some devices
-            Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
-            if (aeState == null ||
-                    aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
-              mState = STATE_PICTURE_TAKEN;
-              captureStillPicture();
-            } else {
-              runPrecaptureSequence();
-            }
-          }
-          break;
-        }
-        case STATE_WAITING_PRECAPTURE: {
-          // CONTROL_AE_STATE can be null on some devices
-          Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
-          if (aeState == null ||
-                  aeState == CaptureResult.CONTROL_AE_STATE_PRECAPTURE ||
-                  aeState == CaptureRequest.CONTROL_AE_STATE_FLASH_REQUIRED) {
-            mState = STATE_WAITING_NON_PRECAPTURE;
-          }
-          break;
-        }
-        case STATE_WAITING_NON_PRECAPTURE: {
-          // CONTROL_AE_STATE can be null on some devices
-          Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
-          if (aeState == null || aeState != CaptureResult.CONTROL_AE_STATE_PRECAPTURE) {
-            mState = STATE_PICTURE_TAKEN;
-            captureStillPicture();
-          }
-          break;
-        }
-      }
-    }
-
-    @Override
-    public void onCaptureProgressed(@NonNull CameraCaptureSession session,
-                                    @NonNull CaptureRequest request,
-                                    @NonNull CaptureResult partialResult) {
-      process(partialResult);
-    }
-
-    @Override
-    public void onCaptureCompleted(@NonNull CameraCaptureSession session,
-                                   @NonNull CaptureRequest request,
-                                   @NonNull TotalCaptureResult result) {
-      process(result);
-    }
-
-  };
-
 
 
 
@@ -718,14 +652,18 @@ public class CameraConnectionFragment extends Fragment {
    * @param height The height of available size for camera preview
    */
   /** Sets up member variables related to camera. */
+  @RequiresApi(api = Build.VERSION_CODES.M)
   private void setUpCameraOutputs(int width, int height) {
     final Activity activity = getActivity();
     final CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
     try {
       final CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
 
+
       final StreamConfigurationMap map =
               characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+
+
 
       sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
 
@@ -735,7 +673,7 @@ public class CameraConnectionFragment extends Fragment {
 
       // For still image captures, we use the largest available size.
       Size largest = Collections.max(
-              Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
+              Arrays.asList(map.getOutputSizes(ImageFormat.YUV_420_888)),
               new CompareSizesByArea());
       previewReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(),
               ImageFormat.JPEG, /*maxImages*/2);
@@ -751,14 +689,14 @@ public class CameraConnectionFragment extends Fragment {
         if (jpegImageReader == null || jpegImageReader.getAndRetain() == null) {
           jpegImageReader = new RefCountedAutoCloseable<>(
                   ImageReader.newInstance(largest.getWidth(),
-                          largest .getHeight(), ImageFormat.JPEG, /*maxImages*/5));
+                          largest .getHeight(), ImageFormat.YUV_420_888, /*maxImages*/5));
         }
 
 
 
 
         this.characteristics = characteristics;
-        this.cameraId = cameraId;
+
       }
 
       // Find out if we need to swap dimension to get the preview size relative to sensor
@@ -841,121 +779,8 @@ public class CameraConnectionFragment extends Fragment {
 
 
 
-  /**
-   * Lock the focus as the first step for a still image capture.
-   */
-  private void lockFocus() {
-
-    try {
-      // This is how to tell the camera to lock focus.
-      previewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
-              CameraMetadata.CONTROL_AF_TRIGGER_START);
-      // Tell #mCaptureCallback to wait for the lock.
-      mState = STATE_WAITING_LOCK;
-      captureSession.capture(previewRequestBuilder.build(), mCaptureCallback,
-              backgroundHandler);
-    } catch (CameraAccessException e) {
-      e.printStackTrace();
-    }
-  }
-
-  /**
-   * Run the precapture sequence for capturing a still image. This method should be called when
-   * we get a response in {@link #mCaptureCallback} from {@link #lockFocus()}.
-   */
-  private void runPrecaptureSequence() {
-    try {
-      // This is how to tell the camera to trigger.
-      previewRequestBuilder.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
-              CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START);
-      // Tell #mCaptureCallback to wait for the precapture sequence to be set.
-      mState = STATE_WAITING_PRECAPTURE;
-      captureSession.capture(previewRequestBuilder.build(), mCaptureCallback,
-              backgroundHandler);
-    } catch (CameraAccessException e) {
-      e.printStackTrace();
-    }
-  }
-
-  /**
-   * Capture a still picture. This method should be called when we get a response in
-   * {@link #mCaptureCallback} from both {@link #lockFocus()}.
-   */
-  private void captureStillPicture() {
-    try {
-      final Activity activity = getActivity();
-      if (null == activity || null == cameraDevice) {
-        return;
-      }
-      // This is the CaptureRequest.Builder that we use to take a picture.
-      final CaptureRequest.Builder captureBuilder =
-              cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
-      captureBuilder.addTarget(previewReader.getSurface());
-
-      // Use the same AE and AF modes as the preview.
-      captureBuilder.set(CaptureRequest.CONTROL_AF_MODE,
-              CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
 
 
-      // Orientation
-      int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
-      captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, getOrientation(rotation));
-
-      CameraCaptureSession.CaptureCallback CaptureCallback
-              = new CameraCaptureSession.CaptureCallback() {
-
-        @Override
-        public void onCaptureCompleted(@NonNull CameraCaptureSession session,
-                                       @NonNull CaptureRequest request,
-                                       @NonNull TotalCaptureResult result) {
-          showToast("Saved: " + mFile);
-
-          unlockFocus();
-        }
-      };
-
-      captureSession.stopRepeating();
-      captureSession.abortCaptures();
-      captureSession.capture(captureBuilder.build(), CaptureCallback, null);
-    } catch (CameraAccessException e) {
-      e.printStackTrace();
-    }
-  }
-
-  /**
-   * Retrieves the JPEG orientation from the specified screen rotation.
-   *
-   * @param rotation The screen rotation.
-   * @return The JPEG orientation (one of 0, 90, 270, and 360)
-   */
-  private int getOrientation(int rotation) {
-    // Sensor orientation is 90 for most devices, or 270 for some devices (eg. Nexus 5X)
-    // We have to take that into account and rotate JPEG properly.
-    // For devices with orientation of 90, we simply return our mapping from ORIENTATIONS.
-    // For devices with orientation of 270, we need to rotate the JPEG 180 degrees.
-    return (ORIENTATIONS.get(rotation) + sensorOrientation + 270) % 360;
-  }
-
-  /**
-   * Unlock the focus. This method should be called when still image capture sequence is
-   * finished.
-   */
-  private void unlockFocus() {
-    try {
-      // Reset the auto-focus trigger
-      previewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
-              CameraMetadata.CONTROL_AF_TRIGGER_CANCEL);
-
-      captureSession.capture(previewRequestBuilder.build(), mCaptureCallback,
-              backgroundHandler);
-      // After this, the camera will go back to the normal state of preview.
-      mState = STATE_PREVIEW;
-      captureSession.setRepeatingRequest(previewRequest, mCaptureCallback,
-              backgroundHandler);
-    } catch (CameraAccessException e) {
-      e.printStackTrace();
-    }
-  }
 
 
 
@@ -1026,6 +851,7 @@ public class CameraConnectionFragment extends Fragment {
   private final TextureView.SurfaceTextureListener surfaceTextureListener
           = new TextureView.SurfaceTextureListener() {
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture texture, int width, int height) {
       openCamera(width, height);
@@ -1126,6 +952,7 @@ public class CameraConnectionFragment extends Fragment {
   // mudar dps
   private final CameraDevice.StateCallback mStateCallback = new CameraDevice.StateCallback() {
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     public void onOpened(CameraDevice cd) {
       // This method is called when the camera is opened.  We start camera preview here if
@@ -1372,6 +1199,7 @@ public class CameraConnectionFragment extends Fragment {
     };
   }
 
+  @RequiresApi(api = Build.VERSION_CODES.M)
   @Override
   public void onResume() {
     super.onResume();
@@ -1422,6 +1250,7 @@ public class CameraConnectionFragment extends Fragment {
   /**
    * Opens the camera specified by {@link #cameraId}.
    */
+  @RequiresApi(api = Build.VERSION_CODES.M)
   @SuppressWarnings("MissingPermission")
   private boolean openCamera(final int width, final int height) {
     setUpCameraOutputs( width, height);
@@ -1569,7 +1398,10 @@ public class CameraConnectionFragment extends Fragment {
    * longer moving, waits for auto-exposure to choose a good exposure value, and waits for
    * auto-white-balance to converge.
    */
+  @RequiresApi(api = Build.VERSION_CODES.M)
   public void takePicture() {
+
+
     jpegImageReader.get().setOnImageAvailableListener(
             mOnJpegImageAvailableListener, backgroundHandler);
     synchronized (mCameraStateLock) {
@@ -1611,6 +1443,8 @@ public class CameraConnectionFragment extends Fragment {
         e.printStackTrace();
       }
     }
+
+
 
   }
 
@@ -1783,16 +1617,14 @@ public class CameraConnectionFragment extends Fragment {
     @Override
     public void run() {
       boolean success = false;
-      int format = mImage.getFormat();
-      switch (format) {
-        case ImageFormat.JPEG: {
-          ByteBuffer buffer = mImage.getPlanes()[0].getBuffer();
-          byte[] bytes = new byte[buffer.remaining()];
-          buffer.get(bytes);
+        byte[] data = NV21toJPEG(YUV420toNV21(mImage), mImage.getWidth(), mImage.getHeight(), 100);
+
+
+
           FileOutputStream output = null;
           try {
             output = new FileOutputStream(mFile);
-            output.write(bytes);
+            output.write(data);
             success = true;
           } catch (IOException e) {
             e.printStackTrace();
@@ -1800,14 +1632,11 @@ public class CameraConnectionFragment extends Fragment {
             mImage.close();
             closeOutput(output);
           }
-          break;
-        }
 
-        default: {
-          Log.e(TAG, "Cannot save image, unexpected image format:" + format);
-          break;
-        }
-      }
+
+
+
+
 
       // Decrement reference count to allow ImageReader to be closed to free up resources.
       mReader.close();
@@ -1829,6 +1658,71 @@ public class CameraConnectionFragment extends Fragment {
                 });
       }
     }
+
+
+      private static byte[] NV21toJPEG(byte[] nv21, int width, int height, int quality) {
+          ByteArrayOutputStream out = new ByteArrayOutputStream();
+          YuvImage yuv = new YuvImage(nv21, ImageFormat.NV21, width, height, null);
+          yuv.compressToJpeg(new Rect(0, 0, width, height), quality, out);
+          return out.toByteArray();
+      }
+
+      private static byte[] YUV420toNV21(Image image) {
+          Rect crop = image.getCropRect();
+          int format = image.getFormat();
+          int width = crop.width();
+          int height = crop.height();
+          Image.Plane[] planes = image.getPlanes();
+          byte[] data = new byte[width * height * ImageFormat.getBitsPerPixel(format) / 8];
+          byte[] rowData = new byte[planes[0].getRowStride()];
+
+          int channelOffset = 0;
+          int outputStride = 1;
+          for (int i = 0; i < planes.length; i++) {
+              switch (i) {
+                  case 0:
+                      channelOffset = 0;
+                      outputStride = 1;
+                      break;
+                  case 1:
+                      channelOffset = width * height + 1;
+                      outputStride = 2;
+                      break;
+                  case 2:
+                      channelOffset = width * height;
+                      outputStride = 2;
+                      break;
+              }
+
+              ByteBuffer buffer = planes[i].getBuffer();
+              int rowStride = planes[i].getRowStride();
+              int pixelStride = planes[i].getPixelStride();
+
+              int shift = (i == 0) ? 0 : 1;
+              int w = width >> shift;
+              int h = height >> shift;
+              buffer.position(rowStride * (crop.top >> shift) + pixelStride * (crop.left >> shift));
+              for (int row = 0; row < h; row++) {
+                  int length;
+                  if (pixelStride == 1 && outputStride == 1) {
+                      length = w;
+                      buffer.get(data, channelOffset, length);
+                      channelOffset += length;
+                  } else {
+                      length = (w - 1) * pixelStride + 1;
+                      buffer.get(rowData, 0, length);
+                      for (int col = 0; col < w; col++) {
+                          data[channelOffset] = rowData[col * pixelStride];
+                          channelOffset += outputStride;
+                      }
+                  }
+                  if (row < h - 1) {
+                      buffer.position(buffer.position() + rowStride - length);
+                  }
+              }
+          }
+          return data;
+      }
 
     /**
      * Builder class for constructing {@link ImageSaver}s.
@@ -2170,20 +2064,10 @@ public class CameraConnectionFragment extends Fragment {
 
       return new AlertDialog.Builder(getActivity())
               .setMessage(R.string.request_permission)
-              .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                  ActivityCompat.requestPermissions(getActivity(), CAMERA_PERMISSIONS,
-                          REQUEST_CAMERA_PERMISSIONS);
-                }
-              })
+              .setPositiveButton(android.R.string.ok, (dialog, which) -> ActivityCompat.requestPermissions(getActivity(), CAMERA_PERMISSIONS,
+                      REQUEST_CAMERA_PERMISSIONS))
               .setNegativeButton(android.R.string.cancel,
-                      new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                          getActivity().finish();
-                        }
-                      })
+                      (dialog, which) -> getActivity().finish())
               .create();
     }
 
