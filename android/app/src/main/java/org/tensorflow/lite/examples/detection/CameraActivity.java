@@ -36,6 +36,8 @@ import android.os.HandlerThread;
 import android.os.Trace;
 import androidx.annotation.NonNull;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
+
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.appcompat.widget.Toolbar;
@@ -424,6 +426,7 @@ public abstract class CameraActivity extends AppCompatActivity
     return null;
   }
 
+  @RequiresApi(api = Build.VERSION_CODES.M)
   protected void setFragment() {
     String cameraId = chooseCamera();
 
