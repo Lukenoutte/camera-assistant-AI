@@ -27,6 +27,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Point;
@@ -1571,8 +1573,10 @@ public class CameraConnectionFragment extends Fragment {
 
       if(image != null) {
           builder.setRefCountedReader(reader).setImage(image);
+          showToast("Imagem Salva! ");
       }else{
-          Log.e(TAG, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" );
+          Log.e(TAG, "Image null, try again!" );
+          takePicture();
       }
       handleCompletionLocked(entry.getKey(), builder, pendingQueue);
     }
@@ -1630,7 +1634,7 @@ public class CameraConnectionFragment extends Fragment {
     @Override
     public void run() {
       boolean success = false;
-        byte[] data = NV21toJPEG(YUV420toNV21(mImage), mImage.getWidth(), mImage.getHeight(), 80);
+        byte[] data = NV21toJPEG(YUV420toNV21(mImage), mImage.getWidth(), mImage.getHeight(), 100);
 
 
 
@@ -1679,6 +1683,8 @@ public class CameraConnectionFragment extends Fragment {
           yuv.compressToJpeg(new Rect(0, 0, width, height), quality, out);
           return out.toByteArray();
       }
+
+
 
       private static byte[] YUV420toNV21(Image image) {
           Rect crop = image.getCropRect();
@@ -1734,6 +1740,8 @@ public class CameraConnectionFragment extends Fragment {
                   }
               }
           }
+
+
           return data;
       }
 
