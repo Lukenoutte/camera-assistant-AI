@@ -20,21 +20,20 @@
     android:layout_height="match_parent"
     android:background="#00000000">
 
-    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@android:color/black"
         android:orientation="vertical">
 
         <Button
-            android:layout_width="164dp"
+            android:layout_width="80dp"
             android:layout_height="80dp"
             android:layout_centerHorizontal="true"
             android:id="@+id/btnCapture"
-            android:text="Capture"
             android:layout_alignParentBottom="true"
-            android:layout_marginBottom="150px"
+            android:layout_marginBottom="170px"
+
             />
 
         <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -49,7 +48,8 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:layout_alignParentTop="true"
-            android:background="@color/semi_transparent">
+            android:background="@color/semi_transparent"
+            android:visibility="invisible">
 
             <ImageView
                 android:layout_width="wrap_content"

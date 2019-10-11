@@ -623,27 +623,6 @@ public class CameraConnectionFragment extends Fragment {
   private static final String TAG = "CameraConnection";
 
 
-
-  /**
-   * Camera state: Waiting for the focus to be locked.
-   */
-  private static final int STATE_WAITING_LOCK = 1;
-
-  /**
-   * Camera state: Waiting for the exposure to be precapture state.
-   */
-  private static final int STATE_WAITING_PRECAPTURE = 2;
-
-  /**
-   * Camera state: Waiting for the exposure state to be something other than precapture.
-   */
-  private static final int STATE_WAITING_NON_PRECAPTURE = 3;
-
-  /**
-   * Camera state: Picture was taken.
-   */
-  private static final int STATE_PICTURE_TAKEN = 4;
-
   /**
    * Max preview width that is guaranteed by Camera2 API
    */
@@ -1004,20 +983,6 @@ public class CameraConnectionFragment extends Fragment {
 
   };
 
-  /**
-   * This a callback object for the {@link ImageReader}. "onImageAvailable" will be called when a
-   * JPEG image is ready to be saved.
-   */
-  private final ImageReader.OnImageAvailableListener mOnJpegImageAvailableListener
-          = new ImageReader.OnImageAvailableListener() {
-
-    @Override
-    public void onImageAvailable(ImageReader reader) {
-      dequeueAndSaveImage(mJpegResultQueue, jpegImageReader);
-    }
-
-  };
-
 
   /**
    * A {@link CameraCaptureSession.CaptureCallback} that handles events for the preview and
@@ -1112,7 +1077,7 @@ public class CameraConnectionFragment extends Fragment {
 
       File jpegFile = new File(Environment.
               getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM),
-              "JPEG_" + currentDateTime + ".jpg");
+              "CaAI_" + currentDateTime + ".jpg");
 
       // Look up the ImageSaverBuilder for this request and update it with the file name
       // based on the capture start time.
@@ -1157,8 +1122,10 @@ public class CameraConnectionFragment extends Fragment {
         // If we have all the results necessary, save the image to a file in the background.
         handleCompletionLocked(requestId, jpegBuilder, mJpegResultQueue);
 
-        finishedCaptureLocked();
-        dequeueAndSaveImage(mJpegResultQueue, jpegImageReader);
+
+              dequeueAndSaveImage(mJpegResultQueue, jpegImageReader);
+
+
       }
 
     }
@@ -1533,6 +1500,7 @@ public class CameraConnectionFragment extends Fragment {
     }
   }
 
+
   /**
    * Retrieve the next {@link Image} from a reference counted {@link ImageReader}, retaining
    * that {@link ImageReader} until that {@link Image} is no longer in use, and set this
@@ -1576,7 +1544,7 @@ public class CameraConnectionFragment extends Fragment {
           showToast("Imagem Salva! ");
       }else{
           Log.e(TAG, "Image null, try again!" );
-          takePicture();
+            takePicture();
       }
       handleCompletionLocked(entry.getKey(), builder, pendingQueue);
     }
