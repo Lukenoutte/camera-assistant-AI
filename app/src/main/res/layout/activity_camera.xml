@@ -26,25 +26,30 @@
         android:background="@android:color/black"
         android:orientation="vertical">
 
-        <Button
+        <ImageButton
             android:layout_width="80dp"
             android:layout_height="80dp"
             android:layout_centerHorizontal="true"
             android:id="@+id/btnCapture"
             android:layout_alignParentBottom="true"
             android:layout_marginBottom="170px"
-
+            android:src="@drawable/capture"
+            android:background="@null"
+            android:scaleType="fitCenter"
             />
 
-        <Button
+        <ImageButton
             android:layout_width="40dp"
             android:layout_height="40dp"
 
             android:id="@+id/btnSee"
             android:layout_alignParentBottom="true"
-            android:layout_marginBottom="290px"
+            android:layout_marginBottom="280px"
             android:layout_alignParentRight="true"
-            android:layout_marginRight="30px"
+            android:layout_marginRight="70px"
+            android:src="@drawable/eye"
+            android:background="@null"
+            android:scaleType="fitCenter"
             />
 
         <FrameLayout

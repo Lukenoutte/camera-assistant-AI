@@ -48,6 +48,7 @@ import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -449,8 +450,8 @@ public abstract class CameraActivity extends AppCompatActivity
 
       camera2Fragment.setCamera(cameraId);
 
-      Button btnCaptureF = findViewById(R.id.btnCapture);
-      Button btnSeeF = findViewById(R.id.btnSee);
+      ImageButton btnCaptureF = findViewById(R.id.btnCapture);
+      ImageButton btnSeeF = findViewById(R.id.btnSee);
 
       btnCaptureF.setOnClickListener((View v) -> {
         camera2Fragment.takePicture();
