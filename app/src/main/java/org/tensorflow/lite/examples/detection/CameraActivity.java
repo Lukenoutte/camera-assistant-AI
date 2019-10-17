@@ -344,6 +344,7 @@ public abstract class CameraActivity extends AppCompatActivity
     }
   }
 
+  @RequiresApi(api = Build.VERSION_CODES.M)
   @Override
   public void onRequestPermissionsResult(
       final int requestCode, final String[] permissions, final int[] grantResults) {
@@ -449,12 +450,19 @@ public abstract class CameraActivity extends AppCompatActivity
       camera2Fragment.setCamera(cameraId);
 
       Button btnCaptureF = findViewById(R.id.btnCapture);
-
+      Button btnSeeF = findViewById(R.id.btnSee);
 
       btnCaptureF.setOnClickListener((View v) -> {
         camera2Fragment.takePicture();
       });
 
+      btnSeeF.setOnClickListener((View v) -> {
+        try {
+          camera2Fragment.seeObjects();
+        } catch (CameraAccessException e) {
+          e.printStackTrace();
+        }
+      });
       fragment = camera2Fragment;
     } else {
       fragment =
