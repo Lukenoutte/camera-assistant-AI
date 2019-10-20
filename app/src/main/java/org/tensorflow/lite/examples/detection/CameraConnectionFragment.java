@@ -1401,6 +1401,7 @@ public class CameraConnectionFragment extends Fragment {
 
     CaptureRequest request = captureBuilder.build();
     captureSession.capture(request, captureCallback, backgroundHandler);
+
   }
 
   /**
