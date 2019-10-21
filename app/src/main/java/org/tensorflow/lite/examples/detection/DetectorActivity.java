@@ -28,6 +28,7 @@ import android.graphics.Typeface;
 import android.media.ImageReader.OnImageAvailableListener;
 import android.os.SystemClock;
 import android.speech.tts.TextToSpeech;
+import android.util.Log;
 import android.util.Size;
 import android.util.TypedValue;
 import android.widget.Toast;
@@ -136,21 +137,24 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     trackingOverlay = (OverlayView) findViewById(R.id.tracking_overlay);
     trackingOverlay.addCallback(
-        new DrawCallback() {
-          @Override
-          public void drawCallback(final Canvas canvas) {
-            tracker.draw(canvas);
-            if (isDebug()) {
-              tracker.drawDebug(canvas);
-            }
-          }
-        });
+            canvas -> {
+              tracker.draw(canvas);
+              if (isDebug()) {
+                tracker.drawDebug(canvas);
+              }
+            });
 
     tracker.setFrameConfiguration(previewWidth, previewHeight, sensorOrientation);
   }
 
   @Override
   protected void processImage() {
+      t1 = new TextToSpeech(getApplicationContext(), status -> {
+          if (status != TextToSpeech.ERROR) {
+              t1.setLanguage(Locale.ENGLISH);
+          }
+      });
+
     ++timestamp;
     final long currTimestamp = timestamp;
     trackingOverlay.postInvalidate();
@@ -175,73 +179,74 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     }
 
     runInBackground(
-        new Runnable() {
-          @Override
-          public void run() {
-              LOGGER.i("Running detection on image " + currTimestamp);
-              final long startTime = SystemClock.uptimeMillis();
-              final List<Classifier.Recognition> results = detector.recognizeImage(croppedBitmap);
-              lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
+            () -> {
+                LOGGER.i("Running detection on image " + currTimestamp);
+                final long startTime = SystemClock.uptimeMillis();
+                final List<Classifier.Recognition> results = detector.recognizeImage(croppedBitmap);
+                lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
 
-              cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
-              final Canvas canvas = new Canvas(cropCopyBitmap);
-              final Paint paint = new Paint();
-              paint.setColor(Color.RED);
-              paint.setStyle(Style.STROKE);
-              paint.setStrokeWidth(2.0f);
+                cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
+                final Canvas canvas1 = new Canvas(cropCopyBitmap);
+                final Paint paint = new Paint();
+                paint.setColor(Color.RED);
+                paint.setStyle(Style.STROKE);
+                paint.setStrokeWidth(2.0f);
 
-              float minimumConfidence = MINIMUM_CONFIDENCE_TF_OD_API;
-              switch (MODE) {
-                  case TF_OD_API:
-                      minimumConfidence = MINIMUM_CONFIDENCE_TF_OD_API;
-                      break;
-              }
+                float minimumConfidence = MINIMUM_CONFIDENCE_TF_OD_API;
+                switch (MODE) {
+                    case TF_OD_API:
+                        minimumConfidence = MINIMUM_CONFIDENCE_TF_OD_API;
+                        break;
+                }
 
-              // Lista de objetos
-              final List<Classifier.Recognition> mappedRecognitions =
-                      new LinkedList<Classifier.Recognition>();
+                // Lista de objetos
+                final List<Classifier.Recognition> mappedRecognitions =
+                        new LinkedList<Classifier.Recognition>();
 
-              for (final Classifier.Recognition result : results) {
-                  final RectF location = result.getLocation();
-                  if (location != null && result.getConfidence() >= minimumConfidence) {
-                      canvas.drawRect(location, paint);
+                for (final Classifier.Recognition result : results) {
+                    final RectF location = result.getLocation();
+                    if (location != null && result.getConfidence() >= minimumConfidence) {
+                        canvas1.drawRect(location, paint);
 
-                      cropToFrameTransform.mapRect(location);
+                        cropToFrameTransform.mapRect(location);
 
-                      result.setLocation(location);
-                      mappedRecognitions.add(result);
-                  }
-              }
-                // Fala os objetos encontrados
-              t1 = new TextToSpeech(getApplicationContext(), status -> {
-                  if (status != TextToSpeech.ERROR) {
-                      t1.setLanguage(Locale.ENGLISH);
-                  }
-              });
-              String toSpeak = mappedRecognitions.get(0).getTitle();
+                        result.setLocation(location);
+                        mappedRecognitions.add(result);
+                    }
+                }
+                  // Fala os objetos encontrados
 
-              if (toSpeak != null){
-                  Toast.makeText(getApplicationContext(), toSpeak, Toast.LENGTH_SHORT);
+                if (mappedRecognitions.isEmpty() == false){
+                String toSpeak = mappedRecognitions.get(0).getTitle();
 
-                  t1.speak(toSpeak, TextToSpeech.QUEUE_FLUSH, null);
+
+                    Toast.makeText(getApplicationContext(), toSpeak, Toast.LENGTH_SHORT);
+
+                    t1.speak(toSpeak, TextToSpeech.QUEUE_FLUSH, null);
+                    Log.e("Test", mappedRecognitions.get(0).getTitle() );
+                  }else{
+                    String toError = "Sorry, Try again!";
+                    Toast.makeText(getApplicationContext(), toError, Toast.LENGTH_SHORT);
+
+                    t1.speak(toError, TextToSpeech.QUEUE_FLUSH, null);
                 }
 
 
 
 
-            tracker.trackResults(mappedRecognitions, currTimestamp);
-            trackingOverlay.postInvalidate();
+              tracker.trackResults(mappedRecognitions, currTimestamp);
+              trackingOverlay.postInvalidate();
 
-            computingDetection = false;
+              computingDetection = false;
 
-            runOnUiThread(
-                    () -> {
-                      showFrameInfo(previewWidth + "x" + previewHeight);
-                      showCropInfo(cropCopyBitmap.getWidth() + "x" + cropCopyBitmap.getHeight());
-                      showInference(lastProcessingTimeMs + "ms");
-                    });
-          }
-        });
+              runOnUiThread(
+                      () -> {
+                        showFrameInfo(previewWidth + "x" + previewHeight);
+                        showCropInfo(cropCopyBitmap.getWidth() + "x" + cropCopyBitmap.getHeight());
+                        showInference(lastProcessingTimeMs + "ms");
+                      });
+            });
+
   }
 
   @Override
