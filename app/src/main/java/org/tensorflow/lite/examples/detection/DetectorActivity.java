@@ -26,6 +26,7 @@ import android.graphics.Paint.Style;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.media.ImageReader.OnImageAvailableListener;
+import android.os.Handler;
 import android.os.SystemClock;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
@@ -36,6 +37,8 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.tensorflow.lite.examples.detection.customview.OverlayView;
 import org.tensorflow.lite.examples.detection.customview.OverlayView.DrawCallback;
@@ -87,6 +90,13 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
   @Override
   public void onPreviewSizeChosen(final Size size, final int rotation) {
+
+     t1 = new TextToSpeech(getApplicationContext(), status -> {
+          if (status != TextToSpeech.ERROR) {
+              t1.setLanguage(Locale.ENGLISH);
+          }
+      });
+
     final float textSizePx =
         TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP, TEXT_SIZE_DIP, getResources().getDisplayMetrics());
@@ -139,6 +149,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     trackingOverlay.addCallback(
             canvas -> {
               tracker.draw(canvas);
+
               if (isDebug()) {
                 tracker.drawDebug(canvas);
               }
@@ -149,11 +160,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
   @Override
   protected void processImage() {
-      t1 = new TextToSpeech(getApplicationContext(), status -> {
-          if (status != TextToSpeech.ERROR) {
-              t1.setLanguage(Locale.ENGLISH);
-          }
-      });
+
 
     ++timestamp;
     final long currTimestamp = timestamp;
@@ -200,7 +207,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 }
 
                 // Lista de objetos
-                final List<Classifier.Recognition> mappedRecognitions =
+                List<Classifier.Recognition> mappedRecognitions =
                         new LinkedList<Classifier.Recognition>();
 
                 for (final Classifier.Recognition result : results) {
@@ -231,11 +238,15 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                     t1.speak(toError, TextToSpeech.QUEUE_FLUSH, null);
                 }
 
-
-
-
-              tracker.trackResults(mappedRecognitions, currTimestamp);
+                tracker.trackResults(mappedRecognitions, currTimestamp);
               trackingOverlay.postInvalidate();
+
+
+                final Handler handler = new Handler();
+                handler.postDelayed(() -> {
+                //delay 2s
+                }, 2000);
+
 
               computingDetection = false;
 
