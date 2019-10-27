@@ -224,13 +224,107 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                   // Fala os objetos encontrados
 
                 if (mappedRecognitions.isEmpty() == false){
-                String toSpeak = mappedRecognitions.get(0).getTitle();
+                    String toSpeak = mappedRecognitions.get(0).getTitle();
+                    int divScreenWeight = previewHeight/3;
+                    int divScreenHeight =  previewWidth/3;
+                    int div2ScreenWeight = divScreenWeight * 2;
+                    int div2ScreenHeight= divScreenHeight * 2;
+                    float  topRetangle = mappedRecognitions.get(0).getLocation().left;
+                    float  rightRetangle = mappedRecognitions.get(0).getLocation().top;
+                    float  bottomRetangle = mappedRecognitions.get(0).getLocation().right;
+                    float  leftRetangle = mappedRecognitions.get(0).getLocation().bottom;
+                    boolean onCenter = false;
+                    boolean onTop = false;
+                    boolean onBottom = false;
+                    boolean onLeft = false;
+                    boolean onRight = false;
+                    String position = " ";
+
+                    //Horizintal
+                    // Check if retangle is on right
+                    if (rightRetangle < divScreenWeight){
+                        position += " on the right";
+                        onRight = true;
+                        if(leftRetangle > div2ScreenWeight){
+                            position += " and left";
+                            onLeft = true;
+                        }else {
+                            if (leftRetangle > divScreenWeight && onCenter == false) {
+                                position += " and center";
+                                onCenter = true;
+                            }
+                        }
+
+                    }
+
+                    // Check if retangle is on center
+                    if(rightRetangle > divScreenWeight && rightRetangle < div2ScreenWeight && onCenter == false){
+                        onCenter = true;
+                        position += " in the center";
+                        if(leftRetangle > div2ScreenWeight){
+                            position += "and left";
+                            onLeft = true;
+                        }
+                    }
+                    // Check if retangle is on left
+                    if(rightRetangle > div2ScreenWeight){
+                        position += " on the left";
+                        onLeft = true;
+
+                    }
+                    if(onRight == true && onLeft == true){
+                        position = " on center";
+                        onCenter = true;
+                    }
+                    // Vertical
+                    // Check if retangle is on top
+                    if(topRetangle < divScreenHeight){
+                        position += " on top";
+                        onTop = true;
+                        if(bottomRetangle > div2ScreenHeight){
+                            position += "and bottom";
+                            onBottom = true;
+                        }else {
+                            if (bottomRetangle > divScreenHeight && onCenter == false) {
+                                position += "and center";
+                                onCenter = true;
+                            }
+                        }
+                    }
+
+                    // Check if retangle is on center
+                    if(topRetangle > divScreenHeight && bottomRetangle < div2ScreenHeight && onCenter == false){
+                        onCenter = true;
+                        position += "in the center";
+                        if(bottomRetangle > div2ScreenHeight){
+                            position += "and bottom";
+                            onBottom = true;
+                        }
 
 
+                    }
+                    // Check if retangle is on bottom
+                    if(topRetangle > div2ScreenHeight){
+
+                        position += "on bottom";
+                        onBottom = true;
+                    }
+
+                    if(onTop == true && onBottom == true ){
+                        position = " on center";
+                        onCenter = true;
+
+                    }
+
+                    if(onRight == true && onLeft == true && onTop == true && onBottom == true){
+                        position = " on center";
+                        onCenter = true;
+                    }
+                    toSpeak += position;
                     Toast.makeText(getApplicationContext(), toSpeak, Toast.LENGTH_SHORT);
 
                     t1.speak(toSpeak, TextToSpeech.QUEUE_FLUSH, null);
-                    Log.e("Test", mappedRecognitions.get(0).getTitle() );
+
                   }else{
                     String toError = "Sorry, Try again!";
                     Toast.makeText(getApplicationContext(), toError, Toast.LENGTH_SHORT);
@@ -242,8 +336,9 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
               trackingOverlay.postInvalidate();
 
 
-                final Handler handler = new Handler();
+                    final Handler handler = new Handler();
                 handler.postDelayed(() -> {
+
                 //delay 2s
                 }, 2000);
 
