@@ -191,7 +191,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 final long startTime = SystemClock.uptimeMillis();
                 final List<Classifier.Recognition> results = detector.recognizeImage(croppedBitmap);
                 lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
-
                 cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
                 final Canvas canvas1 = new Canvas(cropCopyBitmap);
                 final Paint paint = new Paint();
@@ -313,7 +312,12 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                     if(onTop == true && onBottom == true ){
                         position = " on center";
                         onCenter = true;
-
+                        if(onRight == true){
+                            position += "and right";
+                        }
+                        if(onLeft == true){
+                            position += "and left";
+                        }
                     }
 
                     if(onRight == true && onLeft == true && onTop == true && onBottom == true){
