@@ -23,6 +23,8 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.media.ImageReader.OnImageAvailableListener;
@@ -76,7 +78,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
   private Bitmap rgbFrameBitmap = null;
   private Bitmap croppedBitmap = null;
   private Bitmap cropCopyBitmap = null;
-
+  private Bitmap cropCopyBitmap2 = null;
   private boolean computingDetection = false;
 
   private long timestamp = 0;
@@ -192,6 +194,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 final List<Classifier.Recognition> results = detector.recognizeImage(croppedBitmap);
                 lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
                 cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
+                cropCopyBitmap2 = Bitmap.createBitmap(croppedBitmap);
                 final Canvas canvas1 = new Canvas(cropCopyBitmap);
                 final Paint paint = new Paint();
                 paint.setColor(Color.RED);
@@ -337,14 +340,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 }
 
                 tracker.trackResults(mappedRecognitions, currTimestamp);
-              trackingOverlay.postInvalidate();
-
-
-                    final Handler handler = new Handler();
-                handler.postDelayed(() -> {
-
-                //delay 2s
-                }, 2000);
+                trackingOverlay.postInvalidate();
 
 
               computingDetection = false;
@@ -355,6 +351,12 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                         showCropInfo(cropCopyBitmap.getWidth() + "x" + cropCopyBitmap.getHeight());
                         showInference(lastProcessingTimeMs + "ms");
                       });
+                final Handler handler = new Handler();
+                handler.postDelayed(() -> {
+                
+                    //delay 1s
+                }, 1000);
+
             });
 
   }
