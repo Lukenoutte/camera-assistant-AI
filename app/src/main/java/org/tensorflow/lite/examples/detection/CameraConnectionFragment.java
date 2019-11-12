@@ -961,9 +961,7 @@ public class CameraConnectionFragment extends Fragment {
 
 
 
-  public Integer getIso(){
-    return iso;
-  }
+
 
   /**
    * A {@link CameraCaptureSession.CaptureCallback} that handles events for the preview and
@@ -1399,11 +1397,82 @@ public class CameraConnectionFragment extends Fragment {
 
 
   }
+    public void seeLightPrepareCam() {
+        isoTest = true;
 
+        mState = STATE_WAITING_FOR_3A_CONVERGENCE;
+
+        jpegImageReader.get().setOnImageAvailableListener(imageListener, backgroundHandler);
+
+        final SurfaceTexture texture = textureView.getSurfaceTexture();
+        Surface surface = new Surface(texture);
+        // This is the CaptureRequest.Builder that we use to take a picture.
+
+        final CaptureRequest.Builder captureBuilder;
+        try {
+            captureBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
+
+
+            captureBuilder.setTag(requestCounter.getAndIncrement());
+
+            captureBuilder.addTarget(surface);
+
+            CaptureRequest request = captureBuilder.build();
+
+
+            captureSession.capture(request, mPreCaptureCallback, backgroundHandler);
+
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void seeLight() {
+
+        seeLightPrepareCam();
+
+            if(iso == null){
+                seeLightPrepareCam();
+            }
+
+
+
+        if(iso >= 3200){
+            String toError = "It's a little dark";
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                Toast.makeText(getContext(), toError, Toast.LENGTH_SHORT);
+            }
+
+            t2.speak(toError, TextToSpeech.QUEUE_FLUSH, null);
+        }
+        if(iso <= 100){
+            String toError = "It's too light!";
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                Toast.makeText(getContext(), toError, Toast.LENGTH_SHORT);
+            }
+
+            t2.speak(toError, TextToSpeech.QUEUE_FLUSH, null);
+        }
+
+        final Handler handler = new Handler();
+        handler.postDelayed(() -> {
+        String toIso = "The iso is" + iso;
+        Log.e(TAG, "ISO:" + iso );
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Toast.makeText(getContext(), toIso, Toast.LENGTH_SHORT);
+
+        }
+        t2.speak(toIso, TextToSpeech.QUEUE_FLUSH, null);
+
+            //delay 1s
+        }, 1000);
+
+
+    }
 
   public void seeObjects() throws CameraAccessException {
     mState = STATE_WAITING_FOR_3A_CONVERGENCE;
-    isoTest = true;
+
     jpegImageReader.get().setOnImageAvailableListener(imageListener, backgroundHandler);
 
     // This is the CaptureRequest.Builder that we use to take a picture.
@@ -1421,33 +1490,7 @@ public class CameraConnectionFragment extends Fragment {
 
     captureSession.capture(request, mPreCaptureCallback, backgroundHandler);
 
-    final Handler handler = new Handler();
-    handler.postDelayed(() -> {
-    mState = STATE_PREVIEW;
-      //delay 1s
-    }, 1000);
-    Log.e(TAG, "ISO:" + iso );
-    final Handler handler2 = new Handler();
-    handler.postDelayed(() -> {
-      if(iso != null){
- if(iso >= 3200){
-      String toError = "It's a little dark";
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        Toast.makeText(getContext(), toError, Toast.LENGTH_SHORT);
-      }
 
-      t2.speak(toError, TextToSpeech.QUEUE_FLUSH, null);
- }
-        if(iso <= 300){
-          String toError = "It's too light!";
-          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            Toast.makeText(getContext(), toError, Toast.LENGTH_SHORT);
-          }
-
-          t2.speak(toError, TextToSpeech.QUEUE_FLUSH, null);
-        }
-      }
-    }, 500);
   }
 
   /**

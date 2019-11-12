@@ -353,7 +353,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                       });
                 final Handler handler = new Handler();
                 handler.postDelayed(() -> {
-                
+
                     //delay 1s
                 }, 1000);
 

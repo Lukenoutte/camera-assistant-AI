@@ -41,13 +41,24 @@
         <ImageButton
             android:layout_width="50dp"
             android:layout_height="50dp"
-
             android:id="@+id/btnSee"
             android:layout_alignParentBottom="true"
             android:layout_marginBottom="280px"
             android:layout_alignParentRight="true"
             android:layout_marginRight="70px"
             android:src="@drawable/eye"
+            android:background="@null"
+            android:scaleType="fitCenter"
+            />
+
+        <ImageButton
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:id="@+id/btnLight"
+            android:layout_alignParentBottom="true"
+            android:layout_marginBottom="280px"
+            android:layout_marginLeft="70px"
+            android:src="@drawable/btnsun"
             android:background="@null"
             android:scaleType="fitCenter"
             />

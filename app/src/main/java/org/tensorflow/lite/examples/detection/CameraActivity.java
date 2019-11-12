@@ -452,6 +452,7 @@ public abstract class CameraActivity extends AppCompatActivity
 
       ImageButton btnCaptureF = findViewById(R.id.btnCapture);
       ImageButton btnSeeF = findViewById(R.id.btnSee);
+      ImageButton btnLightF = findViewById(R.id.btnLight);
 
       btnCaptureF.setOnClickListener((View v) -> {
         camera2Fragment.takePicture();
@@ -464,6 +465,11 @@ public abstract class CameraActivity extends AppCompatActivity
           e.printStackTrace();
         }
       });
+
+        btnLightF.setOnClickListener((View v) -> {
+            camera2Fragment.seeLight();
+        });
+
       fragment = camera2Fragment;
     } else {
       fragment =
