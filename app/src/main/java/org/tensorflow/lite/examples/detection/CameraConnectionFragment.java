@@ -1427,54 +1427,64 @@ public class CameraConnectionFragment extends Fragment {
         }
     }
 
+
+
+
     public void seeLight() {
+      final Handler handler = new Handler();
 
         seeLightPrepareCam();
 
             if(iso == null){
                 seeLightPrepareCam();
+            }else {
+
+
+              if (iso >= 3200) {
+                String toError = "It's too dark";
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                  Toast.makeText(getContext(), toError, Toast.LENGTH_SHORT);
+                }
+
+                t2.speak(toError, TextToSpeech.QUEUE_FLUSH, null);
+              }
+              if (iso >= 2000 && iso < 3200) {
+                String toError = "It's a little dark";
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                  Toast.makeText(getContext(), toError, Toast.LENGTH_SHORT);
+                }
+
+                t2.speak(toError, TextToSpeech.QUEUE_FLUSH, null);
+              }
+              if (iso >= 150 && iso <= 2000) {
+                String toError = "The light is good";
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                  Toast.makeText(getContext(), toError, Toast.LENGTH_SHORT);
+                }
+
+                t2.speak(toError, TextToSpeech.QUEUE_FLUSH, null);
+              }
+              if (iso <= 150) {
+                String toError = "It's too light!";
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                  Toast.makeText(getContext(), toError, Toast.LENGTH_SHORT);
+                }
+
+                t2.speak(toError, TextToSpeech.QUEUE_FLUSH, null);
+              }
+
+              handler.postDelayed(() -> {
+                String toIso = "The iso is" + iso;
+                Log.e(TAG, "ISO:" + iso);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                  Toast.makeText(getContext(), toIso, Toast.LENGTH_SHORT);
+
+                }
+                t2.speak(toIso, TextToSpeech.QUEUE_FLUSH, null);
+
+                //delay 1s
+              }, 1000);
             }
-
-
-
-        if(iso >= 3200){
-            String toError = "It's a little dark";
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                Toast.makeText(getContext(), toError, Toast.LENGTH_SHORT);
-            }
-
-            t2.speak(toError, TextToSpeech.QUEUE_FLUSH, null);
-        }
-      if(iso >= 150 && iso <= 1500){
-        String toError = "The light is good";
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-          Toast.makeText(getContext(), toError, Toast.LENGTH_SHORT);
-        }
-
-        t2.speak(toError, TextToSpeech.QUEUE_FLUSH, null);
-      }
-        if(iso <= 100){
-            String toError = "It's too light!";
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                Toast.makeText(getContext(), toError, Toast.LENGTH_SHORT);
-            }
-
-            t2.speak(toError, TextToSpeech.QUEUE_FLUSH, null);
-        }
-
-        final Handler handler = new Handler();
-        handler.postDelayed(() -> {
-        String toIso = "The iso is" + iso;
-        Log.e(TAG, "ISO:" + iso );
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            Toast.makeText(getContext(), toIso, Toast.LENGTH_SHORT);
-
-        }
-        t2.speak(toIso, TextToSpeech.QUEUE_FLUSH, null);
-
-            //delay 1s
-        }, 1000);
-
 
     }
 

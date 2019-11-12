@@ -466,10 +466,9 @@ public abstract class CameraActivity extends AppCompatActivity
         }
       });
 
-        btnLightF.setOnClickListener((View v) -> {
-            camera2Fragment.seeLight();
-        });
-
+      btnLightF.setOnClickListener((View v) -> {
+        camera2Fragment.seeLight();
+      });
       fragment = camera2Fragment;
     } else {
       fragment =
