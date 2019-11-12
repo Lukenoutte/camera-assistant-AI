@@ -1486,6 +1486,10 @@ public class CameraConnectionFragment extends Fragment {
               }, 1000);
             }
 
+        handler.postDelayed(() -> {
+            mState = STATE_PREVIEW;
+            //delay 1s
+        }, 1000);
     }
 
   public void seeObjects() throws CameraAccessException {
@@ -1508,7 +1512,11 @@ public class CameraConnectionFragment extends Fragment {
 
     captureSession.capture(request, mPreCaptureCallback, backgroundHandler);
 
-
+      final Handler handler = new Handler();
+      handler.postDelayed(() -> {
+          mState = STATE_PREVIEW;
+          //delay 1s
+      }, 1000);
   }
 
   /**
