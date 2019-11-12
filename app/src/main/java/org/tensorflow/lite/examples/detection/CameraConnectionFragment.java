@@ -1445,6 +1445,14 @@ public class CameraConnectionFragment extends Fragment {
 
             t2.speak(toError, TextToSpeech.QUEUE_FLUSH, null);
         }
+      if(iso >= 150 && iso <= 1500){
+        String toError = "The light is good";
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+          Toast.makeText(getContext(), toError, Toast.LENGTH_SHORT);
+        }
+
+        t2.speak(toError, TextToSpeech.QUEUE_FLUSH, null);
+      }
         if(iso <= 100){
             String toError = "It's too light!";
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
