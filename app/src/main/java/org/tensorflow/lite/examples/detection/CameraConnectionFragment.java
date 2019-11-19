@@ -1473,21 +1473,22 @@ public class CameraConnectionFragment extends Fragment {
                     t2.speak(toError, TextToSpeech.QUEUE_FLUSH, null);
                 }
               }, 2700);
+              
+              handler.postDelayed(() -> {
 
+                String toIso = "The iso is" + iso;
+                showToast("ISO: " + iso);
+                Log.e(TAG, "ISO:" + iso);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                  Toast.makeText(getContext(), toIso, Toast.LENGTH_SHORT);
+
+                }
+
+                t2.speak(toIso, TextToSpeech.QUEUE_FLUSH, null);
+              }, 50);
             }
 
-      handler.postDelayed(() -> {
 
-        String toIso = "The iso is" + iso;
-        showToast("ISO: " + iso);
-        Log.e(TAG, "ISO:" + iso);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-          Toast.makeText(getContext(), toIso, Toast.LENGTH_SHORT);
-
-        }
-
-        t2.speak(toIso, TextToSpeech.QUEUE_FLUSH, null);
-      }, 50);
 
         handler.postDelayed(() -> {
             mState = STATE_PREVIEW;
