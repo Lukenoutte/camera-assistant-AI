@@ -212,6 +212,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 List<Classifier.Recognition> mappedRecognitions =
                         new LinkedList<Classifier.Recognition>();
 
+
+
                 for (final Classifier.Recognition result : results) {
                     final RectF location = result.getLocation();
                     if (location != null && result.getConfidence() >= minimumConfidence) {
@@ -231,6 +233,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                     int divScreenHeight =  previewWidth/3;
                     int div2ScreenWeight = divScreenWeight * 2;
                     int div2ScreenHeight= divScreenHeight * 2;
+                    int metadeDivScreenWeight = divScreenWeight/2;
+                    int metadeDivScreenHeight = divScreenHeight/2;
                     float  topRetangle = mappedRecognitions.get(0).getLocation().left;
                     float  rightRetangle = mappedRecognitions.get(0).getLocation().top;
                     float  bottomRetangle = mappedRecognitions.get(0).getLocation().right;
@@ -240,93 +244,95 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                     boolean onBottom = false;
                     boolean onLeft = false;
                     boolean onRight = false;
+                    boolean onFullH = false;
+                    boolean onFullV = false;
                     String position = " ";
 
-                    //Horizintal
+
                     // Check if retangle is on right
                     if (rightRetangle < divScreenWeight){
                         position += " on the right";
                         onRight = true;
-                        if(leftRetangle > div2ScreenWeight){
-                            position += " and left";
-                            onLeft = true;
-                        }else {
-                            if (leftRetangle > divScreenWeight && onCenter == false) {
-                                position += " and center";
-                                onCenter = true;
-                            }
-                        }
-
                     }
+
+                    if(onRight == true && leftRetangle > (divScreenWeight + metadeDivScreenWeight)){
+                        position += " and in the center";
+                    }
+
+                    if(onRight == true && bottomRetangle > (div2ScreenHeight + metadeDivScreenHeight)){
+                        position += " and on the bottom";
+                    }
+                    if(onRight == true && topRetangle < (divScreenHeight - metadeDivScreenHeight)){
+                        position += " and on the top";
+                    }
+                    // finish on right
+
 
                     // Check if retangle is on center
-                    if(rightRetangle > divScreenWeight && rightRetangle < div2ScreenWeight && onCenter == false){
+                    if (rightRetangle > (divScreenWeight - metadeDivScreenWeight)){
+                        position = " in the center";
                         onCenter = true;
-                        position += " in the center";
-                        if(leftRetangle > div2ScreenWeight){
-                            position += "and left";
-                            onLeft = true;
-                        }
                     }
+                    if(onCenter == true && leftRetangle > (div2ScreenWeight + metadeDivScreenWeight)){
+                        position += " and on the left";
+                    }
+                    if(onCenter == true && bottomRetangle > (div2ScreenHeight + metadeDivScreenHeight)){
+                        position += " and on the bottom";
+                    }
+                    if(onCenter == true && topRetangle < (divScreenHeight - metadeDivScreenHeight)){
+                        position += " and on the top";
+                    }
+                    // finish on center
+
                     // Check if retangle is on left
-                    if(rightRetangle > div2ScreenWeight){
-                        position += " on the left";
+                    if (rightRetangle > (divScreenWeight + metadeDivScreenWeight)){
+                        position = " on the left";
                         onLeft = true;
+                    }
+                    if(onLeft == true && bottomRetangle > (div2ScreenHeight + metadeDivScreenHeight)){
+                        position += " and on the bottom";
+                    }
+                    if(onLeft == true && topRetangle < (divScreenHeight - metadeDivScreenHeight)){
+                        position += " and on the top";
+                    }
+                    // finish on left
 
+                    // Full screen
+                    // Horizontal
+                    if(rightRetangle < (divScreenWeight - metadeDivScreenWeight) && leftRetangle > (div2ScreenWeight + metadeDivScreenWeight)){
+                        position = "  ";
+                        onFullH = true;
                     }
-                    if(onRight == true && onLeft == true){
-                        position = " on center";
-                        onCenter = true;
+                    if(onFullH == true && topRetangle < (divScreenHeight - metadeDivScreenHeight)){
+                        position += " on the top";
                     }
-                    // Vertical
-                    // Check if retangle is on top
-                    if(topRetangle < divScreenHeight){
-                        position += " on top";
-                        onTop = true;
-                        if(bottomRetangle > div2ScreenHeight){
-                            position += "and bottom";
-                            onBottom = true;
-                        }else {
-                            if (bottomRetangle > divScreenHeight && onCenter == false) {
-                                position += "and center";
-                                onCenter = true;
-                            }
+                    if(onFullH == true && bottomRetangle > (div2ScreenHeight + metadeDivScreenHeight)){
+                        position += " on the bottom";
+                    }
+                    if(onFullH == true && topRetangle > (divScreenHeight - metadeDivScreenHeight) && bottomRetangle < (div2ScreenHeight + metadeDivScreenHeight)){
+                        position += " in the center";
+                    }
+
+                    //Vertical
+                    if(topRetangle < (divScreenHeight - metadeDivScreenHeight) && bottomRetangle > (div2ScreenHeight + metadeDivScreenHeight)){
+                        position = "  ";
+                        onFullV = true;
+                    }
+                    if (onFullV == true && rightRetangle > (divScreenWeight + metadeDivScreenWeight)){
+                        position = " on the left";
+                    }
+                    if (onFullV == true && rightRetangle < (divScreenWeight - metadeDivScreenWeight)){
+                        position += " on the right";
                         }
+                    if (onFullV == true && rightRetangle < (divScreenWeight + metadeDivScreenWeight) && rightRetangle > (divScreenWeight - metadeDivScreenWeight) ){
+                        position = " on the center";
                     }
 
-                    // Check if retangle is on center
-                    if(topRetangle > divScreenHeight && bottomRetangle < div2ScreenHeight && onCenter == false){
-                        onCenter = true;
-                        position += "in the center";
-                        if(bottomRetangle > div2ScreenHeight){
-                            position += "and bottom";
-                            onBottom = true;
+                    // full
+                    if(rightRetangle < (divScreenWeight - metadeDivScreenWeight) && leftRetangle > (div2ScreenWeight + metadeDivScreenWeight) && topRetangle < (divScreenHeight - metadeDivScreenHeight) && bottomRetangle > (div2ScreenHeight + metadeDivScreenHeight)){
+                        position = " on full screen";
                         }
-
-
-                    }
-                    // Check if retangle is on bottom
-                    if(topRetangle > div2ScreenHeight){
-
-                        position += "on bottom";
-                        onBottom = true;
-                    }
-
-                    if(onTop == true && onBottom == true ){
-                        position = " on center";
-                        onCenter = true;
-                        if(onRight == true){
-                            position += "and right";
-                        }
-                        if(onLeft == true){
-                            position += "and left";
-                        }
-                    }
-
-                    if(onRight == true && onLeft == true && onTop == true && onBottom == true){
-                        position = " on center";
-                        onCenter = true;
-                    }
+                    // finish Full screen
                     toSpeak += position;
                     Toast.makeText(getApplicationContext(), toSpeak, Toast.LENGTH_SHORT);
 
@@ -339,9 +345,9 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                     t1.speak(toError, TextToSpeech.QUEUE_FLUSH, null);
                 }
 
+
                 tracker.trackResults(mappedRecognitions, currTimestamp);
                 trackingOverlay.postInvalidate();
-
 
               computingDetection = false;
 
@@ -354,8 +360,10 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 final Handler handler = new Handler();
                 handler.postDelayed(() -> {
 
-                    //delay 1s
-                }, 1000);
+                    Log.e("Hey", "CLEAR");
+
+                    //delay 2s
+                }, 2000);
 
             });
 
